@@ -1,8 +1,6 @@
-from utils import data_generator, load_all_data, progress
-from sklearn import metrics
-from keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau, LearningRateScheduler
+from utils import data_generator, load_all_data, batch_prediction, model_evaluate
+from keras import callbacks
 from keras.metrics import categorical_accuracy
-from keras import optimizers
 from models import *
 import os
 import config as C
@@ -25,71 +23,38 @@ def get_arguments():
 
 def main(args):
     path = C.PATH
-
-    model = Pure_CapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
+    model = PureCapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
     model.summary()
     # exit()
 
     if args.target == 'train':
+        checkpoint = callbacks.ModelCheckpoint(f'check_point/{model.name}_best.h5', monitor='val_loss',
+                                               save_best_only=True, verbose=1)
+        reduce = callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=10, mode='min')
+        earlystopping = callbacks.EarlyStopping(monitor='val_loss', patience=20)
+        log = callbacks.CSVLogger('logs/log.csv')
+        tb = callbacks.TensorBoard('logs/tensorboard-logs', batch_size=C.BATCH_SIZE, histogram_freq=0)
+        lr_decay = callbacks.LearningRateScheduler(schedule=lambda epoch: C.LR * (C.LR_DECAY ** epoch))
+
         model.compile(optimizer=optimizers.Adam(lr=C.LR),
                       loss=[margin_loss],
                       loss_weights=[1.],
-                      metrics=[categorical_accuracy])
-        # metrics={'capsnet': 'accuracy'})
+                      # metrics=[categorical_accuracy],
+                      metrics={'capsnet': 'accuracy'})
 
         model.fit_generator(data_generator('/'.join((path, 'train')), target='train'), epochs=20,
                             steps_per_epoch=C.TRAIN_SIZE // C.BATCH_SIZE,
                             validation_data=data_generator('/'.join((path, 'val')), target='val'),
                             validation_steps=C.VAL_SIZE // C.BATCH_SIZE, verbose=1,
-                            callbacks=[ModelCheckpoint(f'check_point/{model.name}_best.h5',
-                                                       monitor='val_capsnet_acc', save_best_only=True,
-                                                       save_weights_only=True, verbose=1),
-                                       ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=10,
-                                                         mode='min'),
-                                       EarlyStopping(monitor='val_loss', patience=20),
-                                       LearningRateScheduler(schedule=lambda epoch: C.LR * (C.LR_DECAY ** epoch))]
-                            )
-        model.save_weights(f'check_point/{model.name}_final.h5')
+                            callbacks=[checkpoint, reduce, log, tb, earlystopping, lr_decay])
+        model.save(f'check_point/{model.name}_final.h5')
     else:
-        model.load_weights(f'check_point/{model.name}_best.h5')
-
-        print("Loading test data ...\n")
+        # model.load_weights(f'check_point/{model.name}_best.h5')
+        model.load_weights(f'check_point/{model.name}_final.h5')
+        print("Loading test data ...")
         x_test, y_test = load_all_data('/'.join((path, 'test')), target='test')
-
-        index = 0
-        batch_size = 200
-        print("length of y_test:", len(y_test))
-
-        print("Computing y_pred ...\n")
-        test_input = x_test[index: index + batch_size]
-        y_pred = model.predict(test_input)[0]
-        index += batch_size
-        percent = index / len(y_test)
-        progress(percent, width=30)
-
-        while index < len(y_test) - batch_size:
-            test_input = x_test[index: index + batch_size]
-            temp = model.predict(test_input)[0]
-            y_pred = np.vstack((y_pred, temp))
-            index += batch_size
-
-            percent = index / len(y_test)
-            progress(percent, width=30)
-
-        test_input = x_test[index:]
-        temp = model.predict(test_input)[0]
-        y_pred = np.vstack((y_pred, temp))
-        percent = index / len(y_test)
-        progress(percent, width=30)
-
-        print("Evaluating model ... \n")
-        rocauc = metrics.roc_auc_score(y_test, y_pred)
-        prauc = metrics.average_precision_score(y_test, y_pred, average='macro')
-        y_pred = (y_pred > 0.5).astype(np.float32)
-        acc = metrics.accuracy_score(y_test, y_pred)
-        f1 = metrics.f1_score(y_test, y_pred, average='samples')
-
-        print(f'Test scores: rocauc={rocauc:.6f}\tprauc={prauc:.6f}\tacc={acc:.6f}\tf1={f1:.6f}')
+        y_pred = batch_prediction(model, x_test, batch_size=200)
+        model_evaluate(y_pred, y_test)
 
 
 if __name__ == "__main__":

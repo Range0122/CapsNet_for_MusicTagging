@@ -31,7 +31,7 @@ import tensorflow as tf
 K.set_image_data_format('channels_last')
 
 
-def Pure_CapsNet(input_shape, n_class, routings):
+def PureCapsNet(input_shape, n_class, routings):
     # K.set_image_dim_ordering('th')
 
     x = Input(shape=input_shape)
@@ -53,7 +53,7 @@ def Pure_CapsNet(input_shape, n_class, routings):
     out_caps = Length(name='capsnet')(digitcaps)
 
     # Models for training and evaluation (prediction)
-    train_model = models.Model(x, out_caps)
+    train_model = models.Model(x, out_caps, name='PureCapsNet')
 
     return train_model
 

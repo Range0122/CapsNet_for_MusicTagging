@@ -5,7 +5,53 @@ import config as C
 import random
 import math
 import sys
+from sklearn import metrics
 import matplotlib.pyplot as plt
+
+
+def plot_log(filename, show=True):
+    data = pd.read_csv(filename)
+
+    fig = plt.figure(figsize=(4, 6))
+    fig.subplots_adjust(top=0.95, bottom=0.05, right=0.95)
+    fig.add_subplot(211)
+    for key in data.keys():
+        if key.find('loss') >= 0 and not key.find('val') >= 0:  # training loss
+            plt.plot(data['epoch'].values, data[key].values, label=key)
+    plt.legend()
+    plt.title('Training loss')
+
+    fig.add_subplot(212)
+    for key in data.keys():
+        if key.find('acc') >= 0:  # acc
+            plt.plot(data['epoch'].values, data[key].values, label=key)
+    plt.legend()
+    plt.title('Training and validation accuracy')
+
+    # fig.savefig('result/log.png')
+    if show:
+        plt.show()
+
+
+def combine_images(generated_images, height=None, width=None):
+    num = generated_images.shape[0]
+    if width is None and height is None:
+        width = int(math.sqrt(num))
+        height = int(math.ceil(float(num) / width))
+    elif width is not None and height is None:  # height not given
+        height = int(math.ceil(float(num) / width))
+    elif height is not None and width is None:  # width not given
+        width = int(math.ceil(float(num) / height))
+
+    shape = generated_images.shape[1:3]
+    image = np.zeros((height * shape[0], width * shape[1]),
+                     dtype=generated_images.dtype)
+    for index, img in enumerate(generated_images):
+        i = int(index / width)
+        j = index % width
+        image[i * shape[0]:(i + 1) * shape[0], j * shape[1]:(j + 1) * shape[1]] = \
+            img[:, :, 0]
+    return image
 
 
 def shuffle_both(a, b):
@@ -77,9 +123,9 @@ def data_generator(path, target):
                 # if target == 'test':
                 #     yield np.array(x)
                 # else:
-                    # yield [np.array(x), np.array(y)], [np.array(y), np.array(x)]
-                    # yield [np.array(x), np.array(y)], [np.array(x)]
-                    # yield np.array(x), np.array(y)
+                # yield [np.array(x), np.array(y)], [np.array(y), np.array(x)]
+                # yield [np.array(x), np.array(y)], [np.array(x)]
+                # yield np.array(x), np.array(y)
 
 
 def load_all_data(path, target):
@@ -130,49 +176,45 @@ def load_all_data(path, target):
         return [np.array(x), np.array(y)], [np.array(y), np.array(x)]
 
 
-def combine_images(generated_images, height=None, width=None):
-    num = generated_images.shape[0]
-    if width is None and height is None:
-        width = int(math.sqrt(num))
-        height = int(math.ceil(float(num) / width))
-    elif width is not None and height is None:  # height not given
-        height = int(math.ceil(float(num) / width))
-    elif height is not None and width is None:  # width not given
-        width = int(math.ceil(float(num) / height))
+def batch_prediction(model, x_test, batch_size):
+    index = 0
+    batch_size = batch_size
+    print("length of x_test:", len(x_test))
 
-    shape = generated_images.shape[1:3]
-    image = np.zeros((height * shape[0], width * shape[1]),
-                     dtype=generated_images.dtype)
-    for index, img in enumerate(generated_images):
-        i = int(index / width)
-        j = index % width
-        image[i * shape[0]:(i + 1) * shape[0], j * shape[1]:(j + 1) * shape[1]] = \
-            img[:, :, 0]
-    return image
+    print("Predicting y_pred ...")
+    batch_input = x_test[index: index + batch_size]
+    y_pred = model.predict(batch_input)
+    index += batch_size
+    percent = index / len(x_test)
+    progress(percent, width=30)
+
+    while index < len(x_test) - batch_size:
+        batch_input = x_test[index: index + batch_size]
+        batch_output = model.predict(batch_input)
+        y_pred = np.vstack((y_pred, batch_output))
+        index += batch_size
+
+        percent = index / len(x_test)
+        progress(percent, width=30)
+
+    test_input = x_test[index:]
+    temp = model.predict(test_input)
+    y_pred = np.vstack((y_pred, temp))
+    percent = index / len(x_test)
+    progress(percent, width=30)
+
+    return y_pred
 
 
-def plot_log(filename, show=True):
-    data = pd.read_csv(filename)
+def model_evaluate(y_pred, y_true):
+    print("Evaluating model ... \n")
+    rocauc = metrics.roc_auc_score(y_true, y_pred)
+    prauc = metrics.average_precision_score(y_true, y_pred, average='macro')
+    y_pred = (y_pred > 0.5).astype(np.float32)
+    acc = metrics.accuracy_score(y_true, y_pred)
+    f1 = metrics.f1_score(y_true, y_pred, average='samples')
 
-    fig = plt.figure(figsize=(4, 6))
-    fig.subplots_adjust(top=0.95, bottom=0.05, right=0.95)
-    fig.add_subplot(211)
-    for key in data.keys():
-        if key.find('loss') >= 0 and not key.find('val') >= 0:  # training loss
-            plt.plot(data['epoch'].values, data[key].values, label=key)
-    plt.legend()
-    plt.title('Training loss')
-
-    fig.add_subplot(212)
-    for key in data.keys():
-        if key.find('acc') >= 0:  # acc
-            plt.plot(data['epoch'].values, data[key].values, label=key)
-    plt.legend()
-    plt.title('Training and validation accuracy')
-
-    # fig.savefig('result/log.png')
-    if show:
-        plt.show()
+    print(f'Test scores: rocauc={rocauc:.6f}\tprauc={prauc:.6f}\tacc={acc:.6f}\tf1={f1:.6f}')
 
 
 if __name__ == "__main__":
