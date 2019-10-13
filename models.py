@@ -58,7 +58,7 @@ def PureCapsNet(input_shape, n_class, routings):
     return train_model
 
 
-def New_Pure_CapsNet(input_shape, n_class, routings):
+def NewPureCapsNet(input_shape, n_class, routings):
     # K.set_image_dim_ordering('th')
 
     x = Input(shape=input_shape)

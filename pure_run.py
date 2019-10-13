@@ -49,8 +49,8 @@ def main(args):
                             callbacks=[checkpoint, reduce, log, tb, earlystopping, lr_decay])
         model.save(f'check_point/{model.name}_final.h5')
     else:
-        # model.load_weights(f'check_point/{model.name}_best.h5')
-        model.load_weights(f'check_point/{model.name}_final.h5')
+        model.load_weights(f'check_point/{model.name}_best.h5')
+        # model.load_weights(f'check_point/{model.name}_final.h5')
         print("Loading test data ...")
         x_test, y_test = load_all_data('/'.join((path, 'test')), target='test')
         y_pred = batch_prediction(model, x_test, batch_size=200)
