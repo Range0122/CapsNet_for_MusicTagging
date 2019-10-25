@@ -73,7 +73,7 @@ def progress(percent, width=50):
     # \r 代表调到行首的意思，\n为换行的意思，fiel代表输出到哪，flush=True代表无延迟，立马刷新。第二个%s是百分比
 
 
-def data_generator(path, target):
+def data_generator(path, target='default'):
     """
     path为存放所有的npy文件的目录
     """
@@ -86,6 +86,8 @@ def data_generator(path, target):
             'indian', 'female', 'synth', 'vocal', 'violin', 'beat', 'ambient',
             'piano', 'fast', 'rock', 'electronic', 'drums', 'strings', 'techno',
             'slow', 'classical', 'guitar']
+    # tags = ['classical', 'techno', 'electronic', 'rock', 'pop', 'country', 'metal', 'jazz', 'modern', 'baroque',
+    # 'folk', 'punk']
 
     df = pd.read_csv('/home/range/Data/MTAT/raw/annotations_final.csv', delimiter='\t')
     mp3_paths = list(df['mp3_path'].values)
@@ -95,7 +97,6 @@ def data_generator(path, target):
         mp3_paths[i] = mp3_paths[i].split('/')[-1][:-4]
 
     for root, dirs, files in os.walk(path):
-        # length = round(len(files) * 0.01)
         length = len(files)
         np.random.shuffle(files)
         while True:
@@ -110,16 +111,24 @@ def data_generator(path, target):
 
                     feature = np.load(file_path)
                     label = labels[mp3_paths.index(file[:-C.LENGTH])]
+                    if label.sum != 0:
+                        if target == 'short':
+                            start = 0
+                            while start + 96 < 1366:
+                                x.append(feature[:, start: start+96, :])
+                                y.append(label)
+                                start += 48
 
-                    x.append(feature)
-                    y.append(label)
+                        else:
+                            x.append(feature)
+                            y.append(label)
 
                 index += batch_size
 
                 x, y = shuffle_both(x, y)
 
                 yield [np.array(x), np.array(y)]
-                #
+
                 # if target == 'test':
                 #     yield np.array(x)
                 # else:
@@ -128,9 +137,10 @@ def data_generator(path, target):
                 # yield np.array(x), np.array(y)
 
 
-def load_all_data(path, target):
+def load_all_data(path, target='default'):
     """
     path为存放所有的npy文件的目录
+    Used for MTAT Dataset
     """
     # load annotation csv
     tags = ['choral', 'female voice', 'metal', 'country', 'weird', 'no voice',
@@ -141,6 +151,9 @@ def load_all_data(path, target):
             'indian', 'female', 'synth', 'vocal', 'violin', 'beat', 'ambient',
             'piano', 'fast', 'rock', 'electronic', 'drums', 'strings', 'techno',
             'slow', 'classical', 'guitar']
+    # tags = ['classical', 'techno', 'electronic', 'rock', 'pop', 'country', 'metal', 'jazz', 'modern', 'baroque',
+    # 'folk', 'punk']
+
     df = pd.read_csv('/home/range/Data/MTAT/raw/annotations_final.csv', delimiter='\t')
     mp3_paths = list(df['mp3_path'].values)
     labels = df[tags].values
@@ -151,8 +164,6 @@ def load_all_data(path, target):
     x = []
     y = []
     for root, dirs, files in os.walk(path):
-        # file_list = [root + '/' + file for file in files]
-
         i = 0
         for file in files:
             file_path = '/'.join((root, file))
@@ -160,8 +171,18 @@ def load_all_data(path, target):
             feature = np.load(file_path)
             label = labels[mp3_paths.index(file[:-C.LENGTH])]
 
-            x.append(feature)
-            y.append(label)
+            if label.sum() != 0:
+                if target == 'short':
+                    start = 0
+                    while start + 96 < 1366:
+                        x.append(feature[:, start: start + 96, :])
+                        y.append(label)
+                        start += 48
+
+                else:
+                    x.append(feature)
+                    y.append(label)
+                    # y.append(np.where(label == 1)[0])
 
             i += 1
             percent = i / len(files)
@@ -170,10 +191,11 @@ def load_all_data(path, target):
 
     x, y = shuffle_both(x, y)
 
-    if target == 'test':
-        return np.array(x), np.array(y)
-    else:
-        return [np.array(x), np.array(y)], [np.array(y), np.array(x)]
+    # if target == 'test':
+    #     return np.array(x), np.array(y)
+    # else:
+    #     return [np.array(x), np.array(y)], [np.array(y), np.array(x)]
+    return np.array(x), np.array(y)
 
 
 def batch_prediction(model, x_test, batch_size):
@@ -217,10 +239,41 @@ def model_evaluate(y_pred, y_true):
     print(f'Test scores: rocauc={rocauc:.6f}\tprauc={prauc:.6f}\tacc={acc:.6f}\tf1={f1:.6f}')
 
 
+def load_all_data2(path):
+    """
+    path为存放所有的npy文件的目录
+    Used for GTZAN log_spectrogram
+    """
+    tags = ['blues', 'classical', 'disco', 'country', 'hiphop', 'jazz', 'metal', 'pop', 'reggae', 'rock']
+
+    x = []
+    y = []
+
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            file_path = '/'.join((path, file))
+            feature = np.load(file_path)
+            label = tags.index(file.split('.')[0])
+
+            x.append(feature)
+            y.append(label)
+
+    x, y = shuffle_both(x, y)
+
+    return np.array(x), np.array(y)
+
+
 if __name__ == "__main__":
     # path = '/home/range/Data/MusicFeature/MTAT/short_spectrogram'
     # x_val, y_val = load_all_data('/'.join((path, 'val')))
-    path = '/home/range/Data/MusicFeature/MTAT/short_spectrogram/val/' \
-           'william_brooks-blue_ribbon__the_best_of_william_brooks-11-grace-0-2900.npy'
-    feature = np.load(path)
-    print(feature.shape)
+    # path = '/home/range/Data/MusicFeature/MTAT/short_spectrogram/val/' \
+    #        'william_brooks-blue_ribbon__the_best_of_william_brooks-11-grace-0-2900.npy'
+    # feature = np.load(path)
+    # print(feature.shape)
+
+    # path = '/home/range/Data/MusicFeature/GTZAN/log_spectrogram/train'
+    # load_all_data2(path)
+    g = data_generator('/'.join((C.PATH, 'train')), target='short')
+    x, y = next(g)
+    print(x.shape)
+    print(y.shape)

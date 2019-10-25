@@ -20,7 +20,7 @@ import numpy as np
 from keras import models, optimizers
 from keras import backend as K
 from keras.utils import to_categorical
-from keras.layers import Conv2D, Input, BatchNormalization, LeakyReLU, ELU
+from keras.layers import Conv2D, Input, BatchNormalization, LeakyReLU, ELU, Conv1D, Dense, Add, Activation, Reshape
 import matplotlib.pyplot as plt
 from utils import combine_images
 from PIL import Image
@@ -39,14 +39,19 @@ def PureCapsNet(input_shape, n_class, routings):
     # Layer 1: Just a conventional Conv2D layer
     conv1 = Conv2D(filters=128, kernel_size=3, strides=2, padding='valid', activation='relu', name='conv1')(x)
     conv2 = Conv2D(filters=128, kernel_size=3, strides=2, padding='valid', activation='relu', name='conv2')(conv1)
-    conv3 = Conv2D(filters=256, kernel_size=3, strides=2, padding='valid', activation='relu', name='conv3')(conv2)
+    conv3 = Conv2D(filters=128, kernel_size=3, strides=2, padding='valid', activation='relu', name='conv3')(conv2)
+
+    # conv1 = Conv2D(filters=128, kernel_size=9, strides=3, padding='valid', activation='relu', name='conv1')(x)
+    # conv2 = Conv2D(filters=128, kernel_size=9, strides=2, padding='valid', activation='relu', name='conv2')(conv1)
+    # conv3 = Conv2D(filters=128, kernel_size=3, strides=2, padding='valid', activation='relu', name='conv3')(conv2)
+    # conv4 = Conv2D(filters=128, kernel_size=3, strides=1, padding='valid', activation='relu', name='conv4')(conv3)
 
     # Layer 2: Conv2D layer with `squash` activation, then reshape to [None, num_capsule, dim_capsule]
     primarycaps = PrimaryCap(conv3, dim_capsule=C.DIM_CAPSULE, n_channels=16, kernel_size=9, strides=2, padding='valid')
 
     # Layer 3: Capsule layer. Routing algorithm works here.
-    digitcaps = CapsuleLayer(num_capsule=n_class, dim_capsule=C.DIM_CAPSULE, routings=routings,
-                             name='digitcaps')(primarycaps)
+    digitcaps = CapsuleLayer(num_capsule=n_class, dim_capsule=C.DIM_CAPSULE, routings=routings, name='digitcaps')(
+        primarycaps)
 
     # Layer 4: This is an auxiliary layer to replace each capsule with its length. Just to match the true label's shape.
     # If using tensorflow, this will not be necessary. :)
@@ -58,37 +63,102 @@ def PureCapsNet(input_shape, n_class, routings):
     return train_model
 
 
-def NewPureCapsNet(input_shape, n_class, routings):
+def MixCapsNet(input_shape, n_class, routings):
+    # K.set_image_dim_ordering('th')
+
+    x = Input(shape=input_shape)
+
+    # part1
+    conv1 = Conv2D(filters=128, kernel_size=3, strides=2, padding='valid', activation='relu', name='conv1')(x)
+    conv2 = Conv2D(filters=128, kernel_size=3, strides=2, padding='valid', activation='relu', name='conv2')(conv1)
+    conv3 = Conv2D(filters=128, kernel_size=3, strides=2, padding='valid', activation='relu', name='conv3')(conv2)
+
+    # part2-branch-a
+    primarycaps = PrimaryCap(conv3, dim_capsule=C.DIM_CAPSULE, n_channels=16, kernel_size=9, strides=2, padding='valid')
+    digitcaps = CapsuleLayer(num_capsule=n_class, dim_capsule=C.DIM_CAPSULE, routings=routings, name='digitcaps')(
+        primarycaps)
+    out_caps = Length(name='capsnet')(digitcaps)
+
+    # part2-branch-b
+    conv4 = Conv2D(filters=128, kernel_size=3, strides=2, padding='valid', activation='relu', name='conv3')(conv3)
+    fc1 = Dense(n_class, name='fc1')(conv4)
+
+    add = Add(name='add')([out_caps, fc1])
+    output = Activation('sigmoid', name='output')(add)
+    # x = Activation('relu', name='relu')(x)
+
+    train_model = models.Model(x, output, name='PureCapsNet')
+
+    return train_model
+
+
+def CapsExtractNet(input_shape, n_class, routings):
+    # K.set_image_dim_ordering('th')
+
+    x = Input(shape=input_shape)
+
+    conv1 = Conv2D(filters=256, kernel_size=9, strides=2, padding='valid', activation='relu', name='conv1')(x)
+
+    primarycaps = PrimaryCap(conv1, dim_capsule=C.DIM_CAPSULE, n_channels=16, kernel_size=9, strides=2, padding='valid')
+    digitcaps = CapsuleLayer(num_capsule=n_class, dim_capsule=C.DIM_CAPSULE, routings=routings, name='digitcaps')(
+        primarycaps)
+    reshape = Reshape((int(digitcaps.shape[1]), int(digitcaps.shape[2], 1)))(digitcaps)
+
+    conv2 = Conv2D(filters=128, kernel_size=3, strides=2, padding='valid', activation='relu', name='conv2')(reshape)
+    conv3 = Conv2D(filters=128, kernel_size=3, strides=2, padding='valid', activation='relu', name='conv2')(conv2)
+    conv4 = Conv2D(filters=128, kernel_size=3, strides=2, padding='valid', activation='relu', name='conv2')(conv3)
+    fc1 = Dense(64, activation='relu', name='fc1')(conv4)
+    fc2 = Dense(n_class, activation='sigmoid', name='fc2')(fc1)
+
+    train_model = models.Model(x, fc2, name='PureCapsNet')
+
+    return train_model
+
+
+def BasicCNN(input_shape, n_class):
+    # K.set_image_dim_ordering('th')
+
+    x = Input(shape=input_shape)
+
+    conv1 = Conv2D(filters=64, kernel_size=3, strides=2, padding='valid', activation='relu', name='conv1')(x)
+    conv2 = Conv2D(filters=128, kernel_size=3, strides=2, padding='valid', activation='relu', name='conv2')(conv1)
+    conv3 = Conv2D(filters=128, kernel_size=3, strides=2, padding='valid', activation='relu', name='conv3')(conv2)
+
+    # fc1 = Dense(64, activation='felu', name='fc1')(conv3)
+    fc2 = Dense(n_class, activation='sigmoid', name='output')(conv3)
+
+    train_model = models.Model(x, fc2, name='BasicCNN')
+
+    return train_model
+
+
+def SmallCapsNet(input_shape, n_class, routings):
     # K.set_image_dim_ordering('th')
 
     x = Input(shape=input_shape)
 
     # Layer 1: Just a conventional Conv2D layer
-    conv1 = Conv2D(filters=128, kernel_size=3, strides=2, padding='valid', name='conv1')(x)
-    bn1 = BatchNormalization(name='bn1')(conv1)
-    elu1 = ELU()(bn1)
+    # conv1 = Conv2D(filters=128, kernel_size=5, strides=2, padding='valid', activation='relu', name='conv1')(x)
+    # conv2 = Conv2D(filters=128, kernel_size=5, strides=2, padding='valid', activation='relu', name='conv2')(conv1)
+    # conv3 = Conv2D(filters=256, kernel_size=5, strides=2, padding='valid', activation='relu', name='conv3')(conv2)
 
-    conv2 = Conv2D(filters=128, kernel_size=3, strides=2, padding='valid', name='conv2')(elu1)
-    bn2 = BatchNormalization(name='bn2')(conv2)
-    elu2 = ELU()(bn2)
-
-    conv3 = Conv2D(filters=256, kernel_size=3, strides=2, padding='valid', name='conv3')(elu2)
-    bn3 = BatchNormalization(name='bn3')(conv3)
-    elu3 = ELU()(bn3)
+    conv1 = Conv2D(filters=64, kernel_size=3, strides=2, padding='valid', activation='relu', name='conv1')(x)
+    conv2 = Conv2D(filters=128, kernel_size=3, strides=2, padding='valid', activation='relu', name='conv2')(conv1)
+    conv3 = Conv2D(filters=128, kernel_size=3, strides=2, padding='valid', activation='relu', name='conv3')(conv2)
+    # conv4 = Conv2D(filters=128, kernel_size=3, strides=2, padding='valid', activation='relu', name='conv4')(conv3)
 
     # Layer 2: Conv2D layer with `squash` activation, then reshape to [None, num_capsule, dim_capsule]
-    primarycaps = PrimaryCap(elu3, dim_capsule=C.DIM_CAPSULE, n_channels=16, kernel_size=9, strides=2, padding='valid')
+    primarycaps = PrimaryCap(conv3, dim_capsule=1, n_channels=128, kernel_size=5, strides=2, padding='valid')
 
     # Layer 3: Capsule layer. Routing algorithm works here.
-    digitcaps = CapsuleLayer(num_capsule=n_class, dim_capsule=C.DIM_CAPSULE, routings=routings,
-                             name='digitcaps')(primarycaps)
+    digitcaps = CapsuleLayer(num_capsule=n_class, dim_capsule=1, routings=routings, name='digitcaps')(primarycaps)
 
     # Layer 4: This is an auxiliary layer to replace each capsule with its length. Just to match the true label's shape.
     # If using tensorflow, this will not be necessary. :)
     out_caps = Length(name='capsnet')(digitcaps)
 
     # Models for training and evaluation (prediction)
-    train_model = models.Model(x, out_caps)
+    train_model = models.Model(x, out_caps, name='SmallCapsNet')
 
     return train_model
 
@@ -109,9 +179,11 @@ def CapsNet(input_shape, n_class, routings):
     # Layer 1: Just a conventional Conv2D layer
     conv1 = layers.Conv2D(filters=128, kernel_size=9, strides=1, padding='valid', activation='relu', name='conv1')(x)
 
-    conv2 = layers.Conv2D(filters=128, kernel_size=9, strides=2, padding='valid', activation='relu', name='conv2')(conv1)
+    conv2 = layers.Conv2D(filters=128, kernel_size=9, strides=2, padding='valid', activation='relu', name='conv2')(
+        conv1)
 
-    conv3 = layers.Conv2D(filters=256, kernel_size=9, strides=2, padding='valid', activation='relu', name='conv3')(conv2)
+    conv3 = layers.Conv2D(filters=256, kernel_size=9, strides=2, padding='valid', activation='relu', name='conv3')(
+        conv2)
 
     # Layer 2: Conv2D layer with `squash` activation, then reshape to [None, num_capsule, dim_capsule]
     primarycaps = PrimaryCap(conv3, dim_capsule=C.DIM_CAPSULE, n_channels=16, kernel_size=9, strides=2, padding='valid')

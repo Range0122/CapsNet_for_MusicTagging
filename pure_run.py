@@ -1,4 +1,4 @@
-from utils import data_generator, load_all_data, batch_prediction, model_evaluate
+from utils import data_generator, load_all_data, load_all_data2, batch_prediction, model_evaluate
 from keras import callbacks
 from keras.metrics import categorical_accuracy
 from models import *
@@ -24,6 +24,7 @@ def get_arguments():
 def main(args):
     path = C.PATH
     model = PureCapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
+    # model = SmallCapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
     model.summary()
     # exit()
 
@@ -42,19 +43,35 @@ def main(args):
                       # metrics=[categorical_accuracy],
                       metrics={'capsnet': 'accuracy'})
 
-        model.fit_generator(data_generator('/'.join((path, 'train')), target='train'), epochs=20,
+        # model.load_weights(f'check_point/{model.name}_best.h5')
+
+        model.fit_generator(data_generator('/'.join((path, 'train')), target='short'), epochs=15,
                             steps_per_epoch=C.TRAIN_SIZE // C.BATCH_SIZE,
-                            validation_data=data_generator('/'.join((path, 'val')), target='val'),
+                            validation_data=data_generator('/'.join((path, 'val')), target='short'),
                             validation_steps=C.VAL_SIZE // C.BATCH_SIZE, verbose=1,
                             callbacks=[checkpoint, reduce, log, tb, earlystopping, lr_decay])
+                            # callbacks=[checkpoint])
+
+        # x_train, y_train = load_all_data('/'.join((path, 'train')), target='train')
+        # x_val, y_val = load_all_data('/'.join((path, 'val')), target='val')
+
+        # x_train, y_train = load_all_data2('/'.join((path, 'train')))
+        # x_val, y_val = load_all_data2('/'.join((path, 'val')))
+        #
+        # model.fit(x_train, y_train, epochs=15, validation_data=(x_val, y_val),
+        #                     callbacks=[checkpoint, reduce, log, tb, earlystopping, lr_decay])
         model.save(f'check_point/{model.name}_final.h5')
     else:
         model.load_weights(f'check_point/{model.name}_best.h5')
-        # model.load_weights(f'check_point/{model.name}_final.h5')
+
         print("Loading test data ...")
-        x_test, y_test = load_all_data('/'.join((path, 'test')), target='test')
+        x_test, y_test = load_all_data('/'.join((path, 'test')), target='short')
         y_pred = batch_prediction(model, x_test, batch_size=200)
         model_evaluate(y_pred, y_test)
+
+        # model.load_weights(f'check_point/{model.name}_final.h5')
+        # y_pred = batch_prediction(model, x_test, batch_size=200)
+        # model_evaluate(y_pred, y_test)
 
 
 if __name__ == "__main__":
