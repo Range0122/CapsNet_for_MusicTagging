@@ -23,7 +23,8 @@ def get_arguments():
 
 def main(args):
     path = C.PATH
-    model = PureCapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
+    # model = PureCapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
+    model = MixCapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
     # model = SmallCapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
     model.summary()
     # exit()
@@ -38,10 +39,11 @@ def main(args):
         lr_decay = callbacks.LearningRateScheduler(schedule=lambda epoch: C.LR * (C.LR_DECAY ** epoch))
 
         model.compile(optimizer=optimizers.Adam(lr=C.LR),
-                      loss=[margin_loss],
+                      # loss=[margin_loss],
+                      loss='binary_crossentropy',
                       loss_weights=[1.],
-                      # metrics=[categorical_accuracy],
-                      metrics={'capsnet': 'accuracy'})
+                      metrics=[categorical_accuracy])
+                      # metrics={'capsnet': 'accuracy'})
 
         # model.load_weights(f'check_point/{model.name}_best.h5')
 

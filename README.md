@@ -23,3 +23,16 @@ Test scores: rocauc=0.799572	prauc=0.259323	acc=0.031796	f1=0.220415
 n_channels=16， dim_capsule=10
 【routings=2，感觉效果不大，所以先停了，猜测跟0.8241区别不大】
 (epoch=10, roc-auc=0.7996)
+
+PureCapsNet_0.7866.h5
+Test scores: rocauc=0.786578	prauc=0.236307	acc=0.029488	f1=0.155552
+(96,96), (128,128,128) 3x3 2 
+n_channels=16， dim_capsule=10
+【routings=1】
+(epoch=6, roc-auc=0.7866)
+
+
+MixCapsNet 训练了8轮 有点不增长了   用的marginloss
+Test scores: rocauc=0.833206	prauc=0.316474	acc=0.056069	f1=0.327459
+
+下面换成binary_crossentropy

@@ -28,6 +28,6 @@ LAM_RECON = 0.358
 LR_DECAY = 0.9
 
 # "The number of iterations used in routing algorithm, which should > 0"
-ROUTINGS = 1
+ROUTINGS = 3
 
 DIM_CAPSULE = 10

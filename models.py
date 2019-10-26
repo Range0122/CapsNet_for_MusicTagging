@@ -96,13 +96,14 @@ def MixCapsNet(input_shape, n_class, routings):
     gru1 = GRU(32, return_sequences=True, name='gru1')(timedis)
     gru2 = GRU(32, return_sequences=False, name='gru2')(gru1)
 
-    fc1 = Dense(n_class, name='fc1')(gru2)
+    fc1 = Dense(n_class, activation='sigmoid', name='fc1')(gru2)
 
     add = Add(name='add')([out_caps, fc1])
-    output = Activation('sigmoid', name='output')(add)
+
+    # output = Activation('sigmoid', name='output')(add)
     # x = Activation('relu', name='relu')(x)
 
-    train_model = models.Model(x, output, name='MixCapsNet')
+    train_model = models.Model(x, add, name='MixCapsNet')
 
     return train_model
 
