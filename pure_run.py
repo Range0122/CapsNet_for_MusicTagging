@@ -24,7 +24,8 @@ def get_arguments():
 def main(args):
     path = C.PATH
     # model = PureCapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
-    model = MixCapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
+    model = NewMixCapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
+    # model = MixCapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
     # model = SmallCapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
     model.summary()
     # exit()

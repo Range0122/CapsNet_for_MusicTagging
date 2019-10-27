@@ -108,6 +108,50 @@ def MixCapsNet(input_shape, n_class, routings):
     return train_model
 
 
+def NewMixCapsNet(input_shape, n_class, routings):
+    # K.set_image_dim_ordering('th')
+
+    x = Input(shape=input_shape)
+
+    # part1
+    conv1 = Conv2D(filters=128, kernel_size=3, strides=2, padding='valid', name='conv1')(x)
+    bn1 = BatchNormalization(name='bn1')(conv1)
+    relu1 = Activation('relu', name='relu1')(bn1)
+
+    conv2 = Conv2D(filters=128, kernel_size=3, strides=2, padding='valid', name='conv2')(relu1)
+    bn2 = BatchNormalization(name='bn2')(conv2)
+    relu2 = Activation('relu', name='relu2')(bn2)
+
+    conv3 = Conv2D(filters=128, kernel_size=3, strides=2, padding='valid', name='conv3')(relu2)
+    bn3 = BatchNormalization(name='bn3')(conv3)
+    relu3 = Activation('relu', name='relu3')(bn3)
+
+    # part2-branch-a
+    primarycaps = PrimaryCap(relu3, dim_capsule=C.DIM_CAPSULE, n_channels=16, kernel_size=9, strides=2, padding='valid')
+    fc1 = Dense(64, activation='relu', name='fc1')(primarycaps)
+
+    # part2-branch-b
+    conv4 = Conv2D(filters=128, kernel_size=3, strides=1, padding='valid', activation='relu', name='conv4')(relu3)
+    bn4 = BatchNormalization(name='bn4')(conv4)
+    relu4 = Activation('relu', name='relu4')(bn4)
+
+    timedis = TimeDistributed(Flatten(), name='timedis')(relu4)
+    gru1 = GRU(32, return_sequences=True, name='gru1')(timedis)
+    gru2 = GRU(32, return_sequences=False, name='gru2')(gru1)
+
+    fc2 = Dense(64, activation='relu', name='fc2')(gru2)
+
+    add = Add(name='add')([fc1, fc2])
+    fc3 = Dense(n_class, activation='sigmoid', name='fc3')(add)
+
+    # output = Activation('sigmoid', name='output')(add)
+    # x = Activation('relu', name='relu')(x)
+
+    train_model = models.Model(x, fc3, name='MixCapsNet')
+
+    return train_model
+
+
 def CapsExtractNet(input_shape, n_class, routings):
     # K.set_image_dim_ordering('th')
 
@@ -217,6 +261,7 @@ if __name__ == "__main__":
 
     # model = PureCapsNet(input_shape, n_class, routings)
     # model = MixCapsNet(input_shape, n_class, routings)
-    model = CapsExtractNet(input_shape, n_class, routings)
+    # model = CapsExtractNet(input_shape, n_class, routings)
+    model = NewMixCapsNet(input_shape, n_class, routings)
 
     model.summary()
