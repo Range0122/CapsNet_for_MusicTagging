@@ -20,7 +20,8 @@ import numpy as np
 from keras import models, optimizers
 from keras import backend as K
 from keras.utils import to_categorical
-from keras.layers import Conv2D, Input, TimeDistributed, BatchNormalization, Flatten, GRU, Dense, Add, Activation, Reshape, ReLU
+from keras.layers import Conv2D, Input, TimeDistributed, BatchNormalization, Flatten, GRU, Dense, Add, Activation, \
+    Reshape, ReLU, LSTM, Bidirectional, MaxPool2D, Dropout
 import matplotlib.pyplot as plt
 from utils import combine_images
 from PIL import Image
@@ -88,7 +89,7 @@ def MixCapsNet(input_shape, n_class, routings):
     out_caps = Length(name='capsnet')(digitcaps)
 
     # part2-branch-b
-    conv4 = Conv2D(filters=128, kernel_size=3, strides=1, padding='valid', activation='relu', name='conv4')(relu3)
+    conv4 = Conv2D(filters=128, kernel_size=3, strides=1, padding='valid', name='conv4')(relu3)
     bn4 = BatchNormalization(name='bn4')(conv4)
     relu4 = Activation('relu', name='relu4')(bn4)
 
@@ -114,40 +115,52 @@ def NewMixCapsNet(input_shape, n_class, routings):
     x = Input(shape=input_shape)
 
     # part1
-    conv1 = Conv2D(filters=128, kernel_size=3, strides=2, padding='valid', name='conv1')(x)
+    conv1 = Conv2D(filters=128, kernel_size=5, strides=2, padding='valid', name='conv1')(x)
     bn1 = BatchNormalization(name='bn1')(conv1)
     relu1 = Activation('relu', name='relu1')(bn1)
 
-    conv2 = Conv2D(filters=128, kernel_size=3, strides=2, padding='valid', name='conv2')(relu1)
+    conv2 = Conv2D(filters=128, kernel_size=5, strides=2, padding='valid', name='conv2')(relu1)
     bn2 = BatchNormalization(name='bn2')(conv2)
     relu2 = Activation('relu', name='relu2')(bn2)
 
-    conv3 = Conv2D(filters=128, kernel_size=3, strides=2, padding='valid', name='conv3')(relu2)
+    conv3 = Conv2D(filters=128, kernel_size=5, strides=2, padding='valid', name='conv3')(relu2)
     bn3 = BatchNormalization(name='bn3')(conv3)
     relu3 = Activation('relu', name='relu3')(bn3)
 
     # part2-branch-a
     primarycaps = PrimaryCap(relu3, dim_capsule=C.DIM_CAPSULE, n_channels=16, kernel_size=9, strides=2, padding='valid')
-    fc1 = Dense(64, activation='relu', name='fc1')(primarycaps)
+    digitcaps = CapsuleLayer(num_capsule=n_class, dim_capsule=C.DIM_CAPSULE, routings=routings, name='digitcaps')(
+        primarycaps)
+    out_caps = Length(name='capsnet')(digitcaps)
 
     # part2-branch-b
-    conv4 = Conv2D(filters=128, kernel_size=3, strides=1, padding='valid', activation='relu', name='conv4')(relu3)
+    conv4 = Conv2D(filters=128, kernel_size=3, strides=1, padding='valid', name='conv4')(relu3)
     bn4 = BatchNormalization(name='bn4')(conv4)
     relu4 = Activation('relu', name='relu4')(bn4)
+    drop4 = Dropout(0.3, name='drop4')(relu4)
 
-    timedis = TimeDistributed(Flatten(), name='timedis')(relu4)
+    conv5 = Conv2D(filters=128, kernel_size=3, strides=1, padding='valid', name='conv5')(drop4)
+    bn5 = BatchNormalization(name='bn5')(conv5)
+    relu5 = Activation('relu', name='relu5')(bn5)
+    drop5 = Dropout(0.3, name='drop5')(relu5)
+
+    conv6 = Conv2D(filters=64, kernel_size=3, strides=1, padding='valid', name='conv6')(drop5)
+    bn6 = BatchNormalization(name='bn6')(conv6)
+    relu6 = Activation('relu', name='relu6')(bn6)
+    drop6 = Dropout(0.3, name='drop6')(relu6)
+
+    timedis = TimeDistributed(Flatten(), name='timedis')(drop6)
     gru1 = GRU(32, return_sequences=True, name='gru1')(timedis)
     gru2 = GRU(32, return_sequences=False, name='gru2')(gru1)
 
-    fc2 = Dense(64, activation='relu', name='fc2')(gru2)
+    fc1 = Dense(n_class, activation='sigmoid', name='fc1')(gru2)
 
-    add = Add(name='add')([fc1, fc2])
-    fc3 = Dense(n_class, activation='sigmoid', name='fc3')(add)
+    add = Add(name='add')([out_caps, fc1])
 
     # output = Activation('sigmoid', name='output')(add)
     # x = Activation('relu', name='relu')(x)
 
-    train_model = models.Model(x, fc3, name='MixCapsNet')
+    train_model = models.Model(x, add, name='NewMixCapsNet')
 
     return train_model
 

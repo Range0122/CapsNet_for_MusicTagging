@@ -11,7 +11,7 @@ import numpy as np
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
-config.gpu_options.per_process_gpu_memory_fraction = 0.90
+config.gpu_options.per_process_gpu_memory_fraction = 0.91
 sess = tf.Session(config=config)
 
 
@@ -24,8 +24,8 @@ def get_arguments():
 def main(args):
     path = C.PATH
     # model = PureCapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
-    model = NewMixCapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
     # model = MixCapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
+    model = NewMixCapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
     # model = SmallCapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
     model.summary()
     # exit()
@@ -42,7 +42,7 @@ def main(args):
         model.compile(optimizer=optimizers.Adam(lr=C.LR),
                       # loss=[margin_loss],
                       loss='binary_crossentropy',
-                      loss_weights=[1.],
+                      # loss_weights=[1.],
                       metrics=[categorical_accuracy])
                       # metrics={'capsnet': 'accuracy'})
 
