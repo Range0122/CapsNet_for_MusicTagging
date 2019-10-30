@@ -69,31 +69,44 @@ def MixCapsNet(input_shape, n_class, routings):
 
     x = Input(shape=input_shape)
 
-    # part1
-    conv1 = Conv2D(filters=128, kernel_size=3, strides=2, padding='valid', name='conv1')(x)
+    # Part1
+    conv1 = Conv2D(64, (3, 3), padding='same', name='conv1')(x)
     bn1 = BatchNormalization(name='bn1')(conv1)
-    relu1 = Activation('relu', name='relu1')(bn1)
+    elu1 = ELU()(bn1)
+    pool1 = MaxPool2D((2, 2), strides=(2, 2), padding='same', name='pool1')(elu1)
 
-    conv2 = Conv2D(filters=128, kernel_size=3, strides=2, padding='valid', name='conv2')(relu1)
+    conv2 = Conv2D(128, (3, 3), padding='same', name='conv2')(pool1)
     bn2 = BatchNormalization(name='bn2')(conv2)
-    relu2 = Activation('relu', name='relu2')(bn2)
+    elu2 = ELU()(bn2)
+    pool2 = MaxPool2D((2, 2), strides=(2, 2), padding='same', name='pool2')(elu2)
+    drop2 = Dropout(0.2, name='dropout2')(pool2)
 
-    conv3 = Conv2D(filters=128, kernel_size=3, strides=2, padding='valid', name='conv3')(relu2)
+    conv3 = Conv2D(128, (3, 3), padding='same', name='conv3')(drop2)
     bn3 = BatchNormalization(name='bn3')(conv3)
-    relu3 = Activation('relu', name='relu3')(bn3)
+    elu3 = ELU()(bn3)
+    pool3 = MaxPool2D((2, 2), strides=(2, 2), padding='same', name='pool3')(elu3)
+    drop3 = Dropout(0.2, name='dropout3')(pool3)
 
-    # part2-branch-a
-    primarycaps = PrimaryCap(relu3, dim_capsule=C.DIM_CAPSULE, n_channels=16, kernel_size=9, strides=2, padding='valid')
+    # Part2-branch-a
+    primarycaps = PrimaryCap(drop3, dim_capsule=C.DIM_CAPSULE, n_channels=32, kernel_size=3, strides=2, padding='valid')
     digitcaps = CapsuleLayer(num_capsule=n_class, dim_capsule=C.DIM_CAPSULE, routings=routings, name='digitcaps')(
         primarycaps)
     out_caps = Length(name='capsnet')(digitcaps)
 
-    # part2-branch-b
-    conv4 = Conv2D(filters=128, kernel_size=3, strides=1, padding='valid', name='conv4')(relu3)
+    # Part2-branch-b
+    conv4 = Conv2D(128, (3, 3), padding='same', name='conv4')(drop3)
     bn4 = BatchNormalization(name='bn4')(conv4)
-    relu4 = Activation('relu', name='relu4')(bn4)
+    elu4 = ELU()(bn4)
+    pool4 = MaxPool2D((2, 2), strides=(2, 2), padding='same', name='pool4')(elu4)
+    drop4 = Dropout(0.3, name='dropout4')(pool4)
 
-    timedis = TimeDistributed(Flatten(), name='timedis')(relu4)
+    conv5 = Conv2D(128, (3, 3), padding='same', name='conv5')(drop4)
+    bn5 = BatchNormalization(name='bn5')(conv5)
+    elu5 = ELU()(bn5)
+    pool5 = MaxPool2D((2, 2), strides=(2, 2), padding='same', name='pool5')(elu5)
+    drop5 = Dropout(0.3, name='dropout5')(pool5)
+
+    timedis = TimeDistributed(Flatten(), name='timedis')(drop5)
     gru1 = GRU(32, return_sequences=True, name='gru1')(timedis)
     gru2 = GRU(32, return_sequences=False, name='gru2')(gru1)
 
