@@ -24,9 +24,10 @@ def get_arguments():
 def main(args):
     path = C.PATH
     # model = PureCapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
-    # model = MixCapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
-    model = NewMixCapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
+    model = MixCapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
+    # model = NewMixCapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
     # model = SmallCapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
+    # model = Basic_CNN(input_shape=C.INPUT_SHAPE, output_class=C.OUTPUT_CLASS)
     model.summary()
     # exit()
 
@@ -48,7 +49,7 @@ def main(args):
 
         # model.load_weights(f'check_point/{model.name}_best.h5')
 
-        model.fit_generator(data_generator('/'.join((path, 'train')), target='short'), epochs=15,
+        model.fit_generator(data_generator('/'.join((path, 'train')), target='short'), epochs=60,
                             steps_per_epoch=C.TRAIN_SIZE // C.BATCH_SIZE,
                             validation_data=data_generator('/'.join((path, 'val')), target='short'),
                             validation_steps=C.VAL_SIZE // C.BATCH_SIZE, verbose=1,

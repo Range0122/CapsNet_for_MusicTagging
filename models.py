@@ -21,7 +21,7 @@ from keras import models, optimizers
 from keras import backend as K
 from keras.utils import to_categorical
 from keras.layers import Conv2D, Input, TimeDistributed, BatchNormalization, Flatten, GRU, Dense, Add, Activation, \
-    Reshape, ReLU, LSTM, Bidirectional, MaxPool2D, Dropout
+    Reshape, ReLU, LSTM, Bidirectional, MaxPool2D, Dropout, ZeroPadding2D, ELU
 import matplotlib.pyplot as plt
 from utils import combine_images
 from PIL import Image
@@ -165,59 +165,122 @@ def NewMixCapsNet(input_shape, n_class, routings):
     return train_model
 
 
-def CapsExtractNet(input_shape, n_class, routings):
+# def Basic_CNN(input_shape, output_class):
+#     K.set_image_dim_ordering('th')
+#
+#     x_in = Input(input_shape, name='input')
+#
+#     # Input block
+#     x = ZeroPadding2D(padding=(0, 37))(x_in)
+#     x = BatchNormalization(name='bn_0_freq')(x)
+#
+#     # Conv block 1
+#
+#     x = Conv2D(64, (3, 3), padding='same', name='conv1')(x_in)
+#     x = BatchNormalization(name='bn1')(x)
+#     x = ELU()(x)
+#     x = MaxPool2D((2, 2), strides=(2, 2), padding='same', name='pool1')(x)
+#     x = Dropout(0.1, name='dropout1')(x)
+#
+#     # Conv block 2
+#     x = Conv2D(128, (3, 3), padding='same', name='conv2')(x)
+#     x = BatchNormalization(name='bn2')(x)
+#     x = ELU()(x)
+#     x = MaxPool2D((3, 3), strides=(3, 3), padding='same', name='pool2')(x)
+#     x = Dropout(0.2, name='dropout2')(x)
+#
+#     # Conv block 3
+#     x = Conv2D(128, (3, 3), padding='same', name='conv3')(x)
+#     x = BatchNormalization(name='bn3')(x)
+#     x = ELU()(x)
+#     x = MaxPool2D((4, 4), strides=(4, 4), padding='same', name='pool3')(x)
+#     x = Dropout(0.3, name='dropout3')(x)
+#
+#     # Conv block 4
+#     x = Conv2D(128, (3, 3), padding='same', name='conv4')(x)
+#     x = BatchNormalization(name='bn4')(x)
+#     x = ELU()(x)
+#     x = MaxPool2D((4, 4), strides=(4, 4), padding='same', name='pool4')(x)
+#     x = Dropout(0.3, name='dropout4')(x)
+#
+#     # Conv block 5
+#     x = Conv2D(128, (3, 3), padding='same', name='conv5')(x)
+#     x = BatchNormalization(name='bn5')(x)
+#     x = ELU()(x)
+#     x = MaxPool2D((4, 4), strides=(4, 4), padding='same', name='pool5')(x)
+#     x = Dropout(0.3, name='dropout5')(x)
+#
+#     # Conv block 6
+#     x = Conv2D(128, (3, 3), padding='same', name='conv6')(x)
+#     x = BatchNormalization(name='bn6')(x)
+#     x = ELU()(x)
+#     x = MaxPool2D((4, 4), strides=(4, 4), padding='same', name='pool6')(x)
+#     x = Dropout(0.3, name='dropout6')(x)
+#
+#     # reshaping
+#     # x = TimeDistributed(Flatten(), name='timedis1')(x)
+#     x = Reshape((int(x.shape[1] * x.shape[2] * x.shape[3]), ))(x)
+#
+#     x = Dense(output_class, activation='sigmoid', name='output')(x)
+#     # x = Dense(output_class, activation='softmax', name='output')(x)
+#
+#     return models.Model(inputs=[x_in], outputs=[x], name='Basic_CNN')
+
+
+def Basic_CNN(input_shape, output_class):
     # K.set_image_dim_ordering('th')
 
-    x = Input(shape=input_shape)
+    x_in = Input(input_shape, name='input')
 
-    conv1 = Conv2D(filters=256, kernel_size=9, strides=4, padding='valid', name='conv1')(x)
-    bn1 = BatchNormalization(name='bn1')(conv1)
-    relu1 = Activation('relu', name='relu1')(bn1)
+    # Input block
+    x = ZeroPadding2D(padding=(0, 37))(x_in)
+    x = BatchNormalization(name='bn_0_freq')(x)
 
-    primarycaps = PrimaryCap(relu1, dim_capsule=C.DIM_CAPSULE, n_channels=16, kernel_size=9, strides=2, padding='valid')
-    digitcaps = CapsuleLayer(num_capsule=n_class, dim_capsule=C.DIM_CAPSULE, routings=routings, name='digitcaps')(
-        primarycaps)
-    reshape = Reshape((int(digitcaps.shape[1]), int(digitcaps.shape[2]), 1))(digitcaps)
+    # Conv block 1
 
-    conv2 = Conv2D(filters=128, kernel_size=3, strides=1, padding='valid', name='conv2')(reshape)
-    bn2 = BatchNormalization(name='bn2')(conv2)
-    relu2 = Activation('relu', name='relu2')(bn2)
+    x = Conv2D(64, (3, 3), strides=2, padding='valid', name='conv1')(x_in)
+    x = BatchNormalization(name='bn1')(x)
+    x = ELU()(x)
+    x = Dropout(0.1, name='dropout1')(x)
 
-    conv3 = Conv2D(filters=128, kernel_size=3, strides=1, padding='valid', name='conv3')(relu2)
-    bn3 = BatchNormalization(name='bn3')(conv3)
-    relu3 = Activation('relu', name='relu3')(bn3)
+    # Conv block 2
+    x = Conv2D(128, (3, 3), strides=2, padding='valid', name='conv2')(x)
+    x = BatchNormalization(name='bn2')(x)
+    x = ELU()(x)
+    x = Dropout(0.2, name='dropout2')(x)
 
-    conv4 = Conv2D(filters=128, kernel_size=3, strides=1, padding='valid', activation='relu', name='conv4')(relu3)
-    bn4 = BatchNormalization(name='bn4')(conv4)
-    relu4 = Activation('relu', name='relu4')(bn4)
+    # Conv block 3
+    x = Conv2D(128, (3, 3), strides=2, padding='valid', name='conv3')(x)
+    x = BatchNormalization(name='bn3')(x)
+    x = ELU()(x)
+    x = Dropout(0.3, name='dropout3')(x)
 
-    timedis = TimeDistributed(Flatten(), name='timedis')(relu4)
-    gru1 = GRU(32, return_sequences=True, name='gru1')(timedis)
-    gru2 = GRU(32, return_sequences=False, name='gru2')(gru1)
+    # Conv block 4
+    x = Conv2D(128, (3, 3), strides=2, padding='valid', name='conv4')(x)
+    x = BatchNormalization(name='bn4')(x)
+    x = ELU()(x)
+    x = Dropout(0.3, name='dropout4')(x)
 
-    fc1 = Dense(64, activation='relu', name='fc1')(gru2)
-    fc2 = Dense(n_class, activation='sigmoid', name='fc2')(fc1)
+    # Conv block 5
+    x = Conv2D(128, (3, 3), strides=1, padding='valid', name='conv5')(x)
+    x = BatchNormalization(name='bn5')(x)
+    x = ELU()(x)
+    x = Dropout(0.3, name='dropout5')(x)
 
-    train_model = models.Model(x, fc2, name='CapsExtractNet')
+    # Conv block 6
+    x = Conv2D(128, (3, 3), strides=1, padding='valid', name='conv6')(x)
+    x = BatchNormalization(name='bn6')(x)
+    x = ELU()(x)
+    x = Dropout(0.3, name='dropout6')(x)
 
-    return train_model
+    # reshaping
+    # x = TimeDistributed(Flatten(), name='timedis1')(x)
+    x = Reshape((int(x.shape[1] * x.shape[2] * x.shape[3]), ))(x)
 
+    x = Dense(output_class, activation='sigmoid', name='output')(x)
+    # x = Dense(output_class, activation='softmax', name='output')(x)
 
-def BasicCNN(input_shape, n_class):
-    # K.set_image_dim_ordering('th')
-
-    x = Input(shape=input_shape)
-
-    conv1 = Conv2D(filters=64, kernel_size=3, strides=2, padding='valid', activation='relu', name='conv1')(x)
-    conv2 = Conv2D(filters=128, kernel_size=3, strides=2, padding='valid', activation='relu', name='conv2')(conv1)
-    conv3 = Conv2D(filters=128, kernel_size=3, strides=2, padding='valid', activation='relu', name='conv3')(conv2)
-
-    # fc1 = Dense(64, activation='felu', name='fc1')(conv3)
-    fc2 = Dense(n_class, activation='sigmoid', name='output')(conv3)
-
-    train_model = models.Model(x, fc2, name='BasicCNN')
-
-    return train_model
+    return models.Model(inputs=[x_in], outputs=[x], name='Basic_CNN')
 
 
 def SmallCapsNet(input_shape, n_class, routings):
