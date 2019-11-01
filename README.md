@@ -38,3 +38,6 @@ Test scores: rocauc=0.833206	prauc=0.316474	acc=0.056069	f1=0.327459
 下面换成binary_crossentropy
 Test scores: rocauc=0.841771	prauc=0.318304	acc=0.057531	f1=0.202625
 
+=========================================
+Test scores: rocauc=0.878898	prauc=0.370301	acc=0.077793	f1=0.292674
+

@@ -3,15 +3,15 @@
 # VAL_SIZE = 2000
 # TRAIN_SIZE = 280485
 # VAL_SIZE = 27270
-BATCH_SIZE = 8
+BATCH_SIZE = 32
 
 TRAIN_SIZE = 18706
 VAL_SIZE = 1825
 
 # TRAIN
 LR = 0.001
-# INPUT_SHAPE = (96, 1366, 1)
-INPUT_SHAPE = (96, 96, 1)
+INPUT_SHAPE = (96, 1366, 1)
+# INPUT_SHAPE = (96, 96, 1)
 OUTPUT_CLASS = 50
 
 # for changing the input shape
@@ -30,4 +30,5 @@ LR_DECAY = 0.9
 # "The number of iterations used in routing algorithm, which should > 0"
 ROUTINGS = 3
 
-DIM_CAPSULE = 8
+DIM_CAPSULE = 16
+N_CHANNELS = 32

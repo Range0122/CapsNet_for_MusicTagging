@@ -24,8 +24,8 @@ def get_arguments():
 def main(args):
     path = C.PATH
     # model = PureCapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
-    model = MixCapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
-    # model = NewMixCapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
+    # model = MixCapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
+    model = NewMixCapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
     # model = SmallCapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
     # model = Basic_CNN(input_shape=C.INPUT_SHAPE, output_class=C.OUTPUT_CLASS)
     model.summary()
@@ -47,11 +47,11 @@ def main(args):
                       metrics=[categorical_accuracy])
                       # metrics={'capsnet': 'accuracy'})
 
-        # model.load_weights(f'check_point/{model.name}_best.h5')
+        # model.load_weights(f'check_point/{model.name}_0.8418.h5')
 
-        model.fit_generator(data_generator('/'.join((path, 'train')), target='short'), epochs=60,
+        model.fit_generator(data_generator('/'.join((path, 'train'))), epochs=20,
                             steps_per_epoch=C.TRAIN_SIZE // C.BATCH_SIZE,
-                            validation_data=data_generator('/'.join((path, 'val')), target='short'),
+                            validation_data=data_generator('/'.join((path, 'val'))),
                             validation_steps=C.VAL_SIZE // C.BATCH_SIZE, verbose=1,
                             callbacks=[checkpoint, reduce, log, tb, earlystopping, lr_decay])
                             # callbacks=[checkpoint])
@@ -69,7 +69,7 @@ def main(args):
         model.load_weights(f'check_point/{model.name}_best.h5')
 
         print("Loading test data ...")
-        x_test, y_test = load_all_data('/'.join((path, 'test')), target='short')
+        x_test, y_test = load_all_data('/'.join((path, 'test')))
         y_pred = batch_prediction(model, x_test, batch_size=200)
         model_evaluate(y_pred, y_test)
 
