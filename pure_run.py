@@ -47,7 +47,7 @@ def main(args):
                       metrics=[categorical_accuracy])
                       # metrics={'capsnet': 'accuracy'})
 
-        # model.load_weights(f'check_point/{model.name}_0.8418.h5')
+        model.load_weights(f'check_point/{model.name}_0.889925.h5')
 
         model.fit_generator(data_generator('/'.join((path, 'train'))), epochs=20,
                             steps_per_epoch=C.TRAIN_SIZE // C.BATCH_SIZE,
