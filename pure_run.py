@@ -40,7 +40,11 @@ def main(args):
         tb = callbacks.TensorBoard('logs/tensorboard-logs', batch_size=C.BATCH_SIZE, histogram_freq=0)
         lr_decay = callbacks.LearningRateScheduler(schedule=lambda epoch: C.LR * (C.LR_DECAY ** epoch))
 
-        model.compile(optimizer=optimizers.Adam(lr=C.LR),
+        # sgd with lr=0.01 for fine-tune
+        optimizer = optimizers.SGD(lr=0.01, momentum=0.9, nesterov=True, decay=1e-6)
+        # optimizer = optimizers.Adam(lr=C.LR)
+
+        model.compile(optimizer=optimizer,
                       # loss=[margin_loss],
                       loss='binary_crossentropy',
                       # loss_weights=[1.],
