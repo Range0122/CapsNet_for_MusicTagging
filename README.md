@@ -41,3 +41,11 @@ Test scores: rocauc=0.841771	prauc=0.318304	acc=0.057531	f1=0.202625
 =========================================
 Test scores: rocauc=0.878898	prauc=0.370301	acc=0.077793	f1=0.292674
 
+MixCapsNet_0.890832.h5  Adam
+然后转换为sgd继续训练 得到0.8987
+具体的可以在self-attention那篇论文里面看到
+
+上面的记不清楚了，下面是Basic_CNN的效果
+Test scores: rocauc=0.889942	prauc=0.405491	acc=0.086796	f1=0.373694
+
+

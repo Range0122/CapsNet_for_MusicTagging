@@ -156,16 +156,16 @@ def NewMixCapsNet(input_shape, n_class, routings):
     x = Dropout(0.3, name='dropout6')(x)
 
     # CapsuleNetwork
-    x = PrimaryCap(x, dim_capsule=C.DIM_CAPSULE, n_channels=32, kernel_size=3, strides=1, padding='same')
-    x = CapsuleLayer(num_capsule=n_class, dim_capsule=C.DIM_CAPSULE, routings=routings, name='digitcaps')(x)
-    x = Length(name='capsnet')(x)
+    # x = PrimaryCap(x, dim_capsule=C.DIM_CAPSULE, n_channels=32, kernel_size=3, strides=1, padding='same')
+    # x = CapsuleLayer(num_capsule=n_class, dim_capsule=C.DIM_CAPSULE, routings=routings, name='digitcaps')(x)
+    # x = Length(name='capsnet')(x)
 
     # # reshaping
     # # x = TimeDistributed(Flatten(), name='timedis1')(x)
     # x = Reshape((int(x.shape[1] * x.shape[2] * x.shape[3]), ))(x)
-    #
-    # x = Dense(n_class, activation='sigmoid', name='output')(x)
-    # # x = Dense(output_class, activation='softmax', name='output')(x)
+
+    x = Dense(n_class, activation='sigmoid', name='output')(x)
+    # x = Dense(output_class, activation='softmax', name='output')(x)
 
     return models.Model(inputs=[x_in], outputs=[x], name='NewMixCapsNet')
 

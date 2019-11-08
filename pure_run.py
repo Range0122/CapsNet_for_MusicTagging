@@ -65,7 +65,7 @@ def main(args):
 
         # x_train, y_train = load_all_data2('/'.join((path, 'train')))
         # x_val, y_val = load_all_data2('/'.join((path, 'val')))
-        #
+
         # model.fit(x_train, y_train, epochs=15, validation_data=(x_val, y_val),
         #                     callbacks=[checkpoint, reduce, log, tb, earlystopping, lr_decay])
         model.save(f'check_point/{model.name}_final.h5')
