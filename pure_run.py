@@ -8,10 +8,10 @@ import tensorflow as tf
 import argparse
 import numpy as np
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
-config.gpu_options.per_process_gpu_memory_fraction = 0.91
+config.gpu_options.per_process_gpu_memory_fraction = 0.95
 sess = tf.Session(config=config)
 
 
@@ -24,10 +24,12 @@ def get_arguments():
 def main(args):
     path = C.PATH
     # model = PureCapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
+    model = TestMixCapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
     # model = MixCapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
-    model = NewMixCapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
-    # model = SmallCapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
+    # model = Basic_CNN(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS) 
+    # model = CapsExtractNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
     # model = Basic_CNN(input_shape=C.INPUT_SHAPE, output_class=C.OUTPUT_CLASS)
+    # model = SmallCapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
     model.summary()
     # exit()
 
@@ -41,7 +43,7 @@ def main(args):
         lr_decay = callbacks.LearningRateScheduler(schedule=lambda epoch: C.LR * (C.LR_DECAY ** epoch))
 
         # sgd with lr=0.01 for fine-tune
-        optimizer = optimizers.SGD(lr=0.01, momentum=0.9, nesterov=True, decay=1e-6)
+        optimizer = optimizers.sgd(lr=0.01, momentum=0.9, nesterov=True, decay=1e-6)
         # optimizer = optimizers.Adam(lr=C.LR)
 
         model.compile(optimizer=optimizer,
@@ -51,9 +53,11 @@ def main(args):
                       metrics=[categorical_accuracy])
                       # metrics={'capsnet': 'accuracy'})
 
-        model.load_weights(f'check_point/{model.name}_0.889925.h5')
+        model.load_weights(f'check_point/{model.name}_best.h5', by_name=True)
+        print(f"{model.name} loaded.")
+        # exit()
 
-        model.fit_generator(data_generator('/'.join((path, 'train'))), epochs=20,
+        model.fit_generator(data_generator('/'.join((path, 'train'))), epochs=120,
                             steps_per_epoch=C.TRAIN_SIZE // C.BATCH_SIZE,
                             validation_data=data_generator('/'.join((path, 'val'))),
                             validation_steps=C.VAL_SIZE // C.BATCH_SIZE, verbose=1,
@@ -65,7 +69,7 @@ def main(args):
 
         # x_train, y_train = load_all_data2('/'.join((path, 'train')))
         # x_val, y_val = load_all_data2('/'.join((path, 'val')))
-
+        #
         # model.fit(x_train, y_train, epochs=15, validation_data=(x_val, y_val),
         #                     callbacks=[checkpoint, reduce, log, tb, earlystopping, lr_decay])
         model.save(f'check_point/{model.name}_final.h5')

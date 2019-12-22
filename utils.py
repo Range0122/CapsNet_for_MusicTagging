@@ -263,32 +263,17 @@ def load_all_data2(path):
     return np.array(x), np.array(y)
 
 
-def load_test(path):
-    tags = ['choral', 'female voice', 'metal', 'country', 'weird', 'no voice',
-            'cello', 'harp', 'beats', 'female vocal', 'male voice', 'dance',
-            'new age', 'voice', 'choir', 'classic', 'man', 'solo', 'sitar', 'soft',
-            'pop', 'no vocal', 'male vocal', 'woman', 'flute', 'quiet', 'loud',
-            'harpsichord', 'no vocals', 'vocals', 'singing', 'male', 'opera',
-            'indian', 'female', 'synth', 'vocal', 'violin', 'beat', 'ambient',
-            'piano', 'fast', 'rock', 'electronic', 'drums', 'strings', 'techno',
-            'slow', 'classical', 'guitar']
-
-    df = pd.read_csv('/home/range/Data/MTAT/raw/annotations_final.csv', delimiter='\t')
-    mp3_paths = list(df['mp3_path'].values)
-    labels = df[tags].values
-
-    for i in range(len(mp3_paths)):
-        mp3_paths[i] = mp3_paths[i].split('/')[-1][:-4]
-
-    count = 0
-    for root, dirs, files in os.walk(path):
-        for file in files:
-            label = labels[mp3_paths.index(file[:-C.LENGTH])]
-            if label.sum() != 0:
-                count += 1
-    print(count)
-
-
 if __name__ == "__main__":
-    path = C.PATH
-    load_test('/'.join((path, 'val')))
+    # path = '/home/range/Data/MusicFeature/MTAT/short_spectrogram'
+    # x_val, y_val = load_all_data('/'.join((path, 'val')))
+    # path = '/home/range/Data/MusicFeature/MTAT/short_spectrogram/val/' \
+    #        'william_brooks-blue_ribbon__the_best_of_william_brooks-11-grace-0-2900.npy'
+    # feature = np.load(path)
+    # print(feature.shape)
+
+    # path = '/home/range/Data/MusicFeature/GTZAN/log_spectrogram/train'
+    # load_all_data2(path)
+    g = data_generator('/'.join((C.PATH, 'train')), target='short')
+    x, y = next(g)
+    print(x.shape)
+    print(y.shape)
