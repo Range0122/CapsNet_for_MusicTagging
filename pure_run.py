@@ -17,7 +17,7 @@ sess = tf.Session(config=config)
 
 def get_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--target", required=True, choices=['train', 'test'], help='train or test')
+    parser.add_argument("--target", required=True, choices=['train', 'test', 'retrain'], help='train or test')
     return parser.parse_args()
 
 
@@ -33,7 +33,7 @@ def main(args):
     model.summary()
     # exit()
 
-    if args.target == 'train':
+    if args.target == 'train' or args.target == 'retrain':
         checkpoint = callbacks.ModelCheckpoint(f'check_point/{model.name}_best.h5', monitor='val_loss',
                                                save_best_only=True, verbose=1)
         reduce = callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=10, mode='min')
@@ -42,36 +42,27 @@ def main(args):
         tb = callbacks.TensorBoard('logs/tensorboard-logs', batch_size=C.BATCH_SIZE, histogram_freq=0)
         lr_decay = callbacks.LearningRateScheduler(schedule=lambda epoch: C.LR * (C.LR_DECAY ** epoch))
 
-        # sgd with lr=0.01 for fine-tune
-        optimizer = optimizers.sgd(lr=0.01, momentum=0.9, nesterov=True, decay=1e-6)
-        # optimizer = optimizers.Adam(lr=C.LR)
+        if args.target == 'retrain':
+            # sgd with lr=0.01 for fine-tune
+            optimizer = optimizers.sgd(lr=0.01, momentum=0.9, nesterov=True, decay=1e-6)
+            model.load_weights(f'check_point/{model.name}_best.h5', by_name=True)
+            print(f"{model.name} loaded.")
+        else:
+            optimizer = optimizers.Adam(lr=C.LR)
+            print("No model loaded.")
 
         model.compile(optimizer=optimizer,
                       # loss=[margin_loss],
                       loss='binary_crossentropy',
                       # loss_weights=[1.],
                       metrics=[categorical_accuracy])
-                      # metrics={'capsnet': 'accuracy'})
-
-        model.load_weights(f'check_point/{model.name}_best.h5', by_name=True)
-        print(f"{model.name} loaded.")
-        # exit()
-
+        # metrics={'capsnet': 'accuracy'})
         model.fit_generator(data_generator('/'.join((path, 'train'))), epochs=120,
                             steps_per_epoch=C.TRAIN_SIZE // C.BATCH_SIZE,
                             validation_data=data_generator('/'.join((path, 'val'))),
                             validation_steps=C.VAL_SIZE // C.BATCH_SIZE, verbose=1,
-                            callbacks=[checkpoint, reduce, log, tb, earlystopping, lr_decay])
-                            # callbacks=[checkpoint])
-
-        # x_train, y_train = load_all_data('/'.join((path, 'train')), target='train')
-        # x_val, y_val = load_all_data('/'.join((path, 'val')), target='val')
-
-        # x_train, y_train = load_all_data2('/'.join((path, 'train')))
-        # x_val, y_val = load_all_data2('/'.join((path, 'val')))
-        #
-        # model.fit(x_train, y_train, epochs=15, validation_data=(x_val, y_val),
-        #                     callbacks=[checkpoint, reduce, log, tb, earlystopping, lr_decay])
+                            callbacks=[checkpoint, log, tb, earlystopping])
+        # callbacks=[checkpoint])
         model.save(f'check_point/{model.name}_final.h5')
     else:
         model.load_weights(f'check_point/{model.name}_best.h5')

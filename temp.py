@@ -332,9 +332,34 @@ def progress(percent, width=50):
     # \r 代表调到行首的意思，\n为换行的意思，fiel代表输出到哪，flush=True代表无延迟，立马刷新。第二个%s是百分比
 
 
-if __name__ == '__main__':
-    train, val, test = create_dataset_for_MTAT()
-    generate_feature_for_MTAT(train, 'train')
-    generate_feature_for_MTAT(val, 'val')
-    generate_feature_for_MTAT(test, 'test')
+def test(audio_path):
+    SR = 22050
+    N_FFT = 2048
+    N_MELS = 128
+    HOP_LEN = 256
+    DURA = 29.09
 
+    src, sr = librosa.load(audio_path, sr=SR)  # whole signal
+    n_sample = src.shape[0]
+    n_sample_fit = int(DURA * SR)
+
+    if n_sample < n_sample_fit:  # if too short
+        src = np.hstack((src, np.zeros((int(DURA * SR) - n_sample,))))
+    elif n_sample > n_sample_fit:  # if too long
+        src = src[(n_sample - n_sample_fit) // 2:(n_sample + n_sample_fit) // 2]
+    logam = librosa.amplitude_to_db
+    melgram = librosa.feature.melspectrogram
+    ret = logam(melgram(y=src, sr=SR, hop_length=HOP_LEN,
+                        n_fft=N_FFT, n_mels=N_MELS))
+    ret = ret[:, :, np.newaxis]
+    return ret
+
+
+if __name__ == '__main__':
+    # train, val, test = create_dataset_for_MTAT()
+    # generate_feature_for_MTAT(train, 'train')
+    # generate_feature_for_MTAT(val, 'val')
+    # generate_feature_for_MTAT(test, 'test')
+    test_path = '/home/range/Data/MTAT/raw/mp3/0/williamson-a_few_things_to_hear_before_we_all_blow_up-10-a-0-29.mp3'
+    test_spectrogram = test(test_path)
+    print(test_spectrogram.shape)
