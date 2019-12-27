@@ -26,6 +26,7 @@ from keras.layers import Conv2D, Input, TimeDistributed, BatchNormalization, Fla
 import matplotlib.pyplot as plt
 from utils import combine_images
 from PIL import Image
+from keras import regularizers
 from capslayers import CapsuleLayer, PrimaryCap, Length, Mask
 import config as C
 import tensorflow as tf
@@ -158,56 +159,6 @@ def PureCapsNet(input_shape, n_class, routings):
     return train_model
 
 
-def Basic_CNN(input_shape, n_class):
-    # K.set_image_dim_ordering('th')
-
-    x = Input(input_shape, name='input')
-
-    # Part1
-    conv1 = Conv2D(64, (3, 3), padding='same', name='conv1')(x)
-    bn1 = BatchNormalization(name='bn1')(conv1)
-    relu1 = ReLU()(bn1)
-    pool1 = MaxPool2D((2, 2), strides=(2, 2), padding='same', name='pool1')(relu1)
-    drop1 = Dropout(0.1, name='dropout1')(pool1)
-
-    conv2 = Conv2D(128, (3, 3), padding='same', name='conv2')(drop1)
-    bn2 = BatchNormalization(name='bn2')(conv2)
-    relu2 = ReLU()(bn2)
-    pool2 = MaxPool2D((2, 2), strides=(2, 2), padding='same', name='pool2')(relu2)
-    drop2 = Dropout(0.2, name='dropout2')(pool2)
-
-    conv3 = Conv2D(128, (3, 3), padding='same', name='conv3')(drop2)
-    bn3 = BatchNormalization(name='bn3')(conv3)
-    relu3 = ReLU()(bn3)
-    pool3 = MaxPool2D((2, 2), strides=(2, 2), padding='same', name='pool3')(relu3)
-    drop3 = Dropout(0.2, name='dropout3')(pool3)
-
-    conv4 = Conv2D(128, (3, 3), padding='same', name='conv4')(drop3)
-    bn4 = BatchNormalization(name='bn4')(conv4)
-    relu4 = ReLU()(bn4)
-    pool4 = MaxPool2D((2, 2), strides=(2, 2), padding='same', name='pool4')(relu4)
-    drop4 = Dropout(0.3, name='dropout4')(pool4)
-
-    conv5 = Conv2D(128, (3, 3), padding='same', name='conv5')(drop4)
-    bn5 = BatchNormalization(name='bn5')(conv5)
-    relu5 = ReLU()(bn5)
-    pool5 = MaxPool2D((2, 2), strides=(2, 2), padding='same', name='pool5')(relu5)
-    drop5 = Dropout(0.3, name='dropout5')(pool5)
-
-    conv6 = Conv2D(128, (3, 3), padding='same', name='conv6')(drop5)
-    bn6 = BatchNormalization(name='bn6')(conv6)
-    relu6 = ReLU()(bn6)
-    pool6 = MaxPool2D((2, 2), strides=(2, 2), padding='same', name='pool6')(relu6)
-    drop6 = Dropout(0.3, name='dropout6')(pool6)
-    flastten = Flatten()(drop6)
-
-    fc1 = Dense(n_class, activation='sigmoid', name='fc1')(flastten)
-
-    train_model = models.Model(x, fc1, name='MixCapsNet')
-
-    return train_model
-
-
 def TestMixCapsNet(input_shape, n_class, routings):
     # K.set_image_dim_ordering('th')
 
@@ -235,7 +186,7 @@ def TestMixCapsNet(input_shape, n_class, routings):
     relu3 = ReLU()(bn3)
     pool3 = MaxPool2D((2, 2), strides=(2, 2), padding='same', name='pool3')(relu3)
     drop3 = Dropout(0.3, name='dropout3')(pool3)
-    # cbam3 = cbam_block(drop3, 8)
+    cbam3 = cbam_block(drop3, 8)
 
     conv4 = Conv2D(128, (3, 3), padding='same', name='conv4')(drop3)
     # conv4 = Conv2D(128, (3, 3), padding='same', name='conv4')(cbam3)
@@ -270,8 +221,8 @@ def TestMixCapsNet(input_shape, n_class, routings):
     # cbam7 = cbam_block(drop7, 8)
 
     # Part2-branch-a
-    primarycaps = PrimaryCap(drop7, dim_capsule=8, n_channels=16, kernel_size=3, strides=2, padding='same')
-    digitcaps = CapsuleLayer(num_capsule=n_class, dim_capsule=32, routings=routings, name='digitcaps')(primarycaps)
+    primarycaps = PrimaryCap(drop7, dim_capsule=8, n_channels=32, kernel_size=3, strides=2, padding='same', name='primarycaps')
+    digitcaps = CapsuleLayer(num_capsule=n_class, dim_capsule=16, routings=routings, name='digitcaps')(primarycaps)
     out_caps = Length(name='capsnet')(digitcaps)
     # fc1 = Dense(n_class, activation='sigmoid', name='fc1')(out_caps)
 
@@ -292,6 +243,88 @@ def TestMixCapsNet(input_shape, n_class, routings):
     add = Add(name='add')([out_caps, fc1])
 
     train_model = models.Model(x, add, name='TestMixCapsNet')
+
+    return train_model
+
+
+def MultiScaleCapsNet(input_shape, n_class, routings):
+    # K.set_image_dim_ordering('th')
+
+    x = Input(input_shape, name='input')
+
+    # Part1
+    conv1 = Conv2D(64, (3, 3), padding='same', name='conv1')(x)
+    bn1 = BatchNormalization(name='bn1')(conv1)
+    relu1 = ReLU()(bn1)
+    pool1 = MaxPool2D((2, 2), strides=(2, 2), padding='same', name='pool1')(relu1)
+    drop1 = Dropout(0.3, name='dropout1')(pool1)
+
+    conv2 = Conv2D(128, (3, 3), padding='same', name='conv2')(drop1)
+    bn2 = BatchNormalization(name='bn2')(conv2)
+    relu2 = ReLU()(bn2)
+    pool2 = MaxPool2D((2, 2), strides=(2, 2), padding='same', name='pool2')(relu2)
+    drop2 = Dropout(0.3, name='dropout2')(pool2)
+
+    conv3 = Conv2D(128, (3, 3), padding='same', name='conv3')(drop2)
+    bn3 = BatchNormalization(name='bn3')(conv3)
+    relu3 = ReLU()(bn3)
+    pool3 = MaxPool2D((2, 2), strides=(2, 2), padding='same', name='pool3')(relu3)
+    drop3 = Dropout(0.3, name='dropout3')(pool3)
+
+    conv4 = Conv2D(128, (3, 3), padding='same', name='conv4')(drop3)
+    bn4 = BatchNormalization(name='bn4')(conv4)
+    relu4 = ReLU()(bn4)
+    pool4 = MaxPool2D((2, 2), strides=(2, 2), padding='same', name='pool4')(relu4)
+    drop4 = Dropout(0.3, name='dropout4')(pool4)
+
+    conv5 = Conv2D(128, (3, 3), padding='same', name='conv5')(drop4)
+    bn5 = BatchNormalization(name='bn5')(conv5)
+    relu5 = ReLU()(bn5)
+    pool5 = MaxPool2D((2, 2), strides=(2, 2), padding='same', name='pool5')(relu5)
+    drop5 = Dropout(0.3, name='dropout5')(pool5)
+
+    conv6 = Conv2D(128, (3, 3), padding='same', name='conv6')(drop5)
+    bn6 = BatchNormalization(name='bn6')(conv6)
+    relu6 = ReLU()(bn6)
+    pool6 = MaxPool2D((2, 2), strides=(2, 2), padding='same', name='pool6')(relu6)
+    drop6 = Dropout(0.3, name='dropout6')(pool6)
+
+    conv7 = Conv2D(128, (3, 3), padding='same', name='conv7')(drop6)
+    bn7 = BatchNormalization(name='bn7')(conv7)
+    relu7 = ReLU()(bn7)
+    pool7 = MaxPool2D((2, 2), strides=(2, 2), padding='same', name='pool7')(relu7)
+    drop7 = Dropout(0.3, name='dropout7')(pool7)
+
+    conv8 = Conv2D(128, (3, 3), padding='same', name='conv8')(drop7)
+    bn8 = BatchNormalization(name='bn8')(conv8)
+    relu8 = ReLU()(bn8)
+    pool8 = MaxPool2D((2, 2), strides=(2, 2), padding='same', name='pool8')(relu8)
+    drop8 = Dropout(0.3, name='dropout8')(pool8)
+
+    # Part2-branch-a
+    primarycaps6 = PrimaryCap(drop6, dim_capsule=8, n_channels=16, kernel_size=3, strides=2, padding='same',
+                              name='primarycaps6')
+    digitcaps6 = CapsuleLayer(num_capsule=n_class, dim_capsule=32, routings=routings, name='digitcaps6')(primarycaps6)
+    out_caps6 = Length(name='capsnet6')(digitcaps6)
+
+    primarycaps7 = PrimaryCap(drop7, dim_capsule=8, n_channels=16, kernel_size=3, strides=2, padding='same',
+                              name='primarycaps7')
+    digitcaps7 = CapsuleLayer(num_capsule=n_class, dim_capsule=32, routings=routings, name='digitcaps7')(primarycaps7)
+    out_caps7 = Length(name='capsnet7')(digitcaps7)
+
+    primarycaps8 = PrimaryCap(drop8, dim_capsule=8, n_channels=16, kernel_size=3, strides=2, padding='same',
+                              name='primarycaps8')
+    digitcaps8 = CapsuleLayer(num_capsule=n_class, dim_capsule=32, routings=routings, name='digitcaps8')(primarycaps8)
+    out_caps8 = Length(name='capsnet8')(digitcaps8)
+
+    # Part2-branch-b
+    flastten = Flatten()(drop7)
+    fc1 = Dense(n_class, activation='sigmoid', name='fc1')(flastten)
+
+    # Part3
+    add = Add(name='add')([out_caps6, out_caps7, out_caps8, fc1])
+
+    train_model = models.Model(x, add, name='MultiScaleCapsNet')
 
     return train_model
 

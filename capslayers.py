@@ -178,7 +178,7 @@ class CapsuleLayer(layers.Layer):
         return dict(list(base_config.items()) + list(config.items()))
 
 
-def PrimaryCap(inputs, dim_capsule, n_channels, kernel_size, strides, padding):
+def PrimaryCap(inputs, dim_capsule, n_channels, kernel_size, strides, padding, name):
     """
     Apply Conv2D `n_channels` times and concatenate all capsules
     :param inputs: 4D tensor, shape=[None, width, height, channels]
@@ -187,9 +187,9 @@ def PrimaryCap(inputs, dim_capsule, n_channels, kernel_size, strides, padding):
     :return: output tensor, shape=[None, num_capsule, dim_capsule]
     """
     output = layers.Conv2D(filters=dim_capsule * n_channels, kernel_size=kernel_size, strides=strides, padding=padding,
-                           name='primarycap_conv2d')(inputs)
-    outputs = layers.Reshape(target_shape=[-1, dim_capsule], name='primarycap_reshape')(output)
-    return layers.Lambda(squash, name='primarycap_squash')(outputs)
+                           name=f'{name}_conv2d')(inputs)
+    outputs = layers.Reshape(target_shape=[-1, dim_capsule], name=f'{name}_reshape')(output)
+    return layers.Lambda(squash, name=f'{name}_squash')(outputs)
 
 
 """

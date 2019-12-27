@@ -111,11 +111,11 @@ def data_generator(path, target='default'):
 
                     feature = np.load(file_path)
                     label = labels[mp3_paths.index(file[:-C.LENGTH])]
-                    if label.sum != 0:
+                    if label.sum() != 0 and label.sum() != 1:
                         if target == 'short':
                             start = 0
                             while start + 96 < 1366:
-                                x.append(feature[:, start: start+96, :])
+                                x.append(feature[:, start: start + 96, :])
                                 y.append(label)
                                 start += 48
 
@@ -171,7 +171,7 @@ def load_all_data(path, target='default'):
             feature = np.load(file_path)
             label = labels[mp3_paths.index(file[:-C.LENGTH])]
 
-            if label.sum() != 0:
+            if label.sum() != 0 and label.sum() != 1:
                 if target == 'short':
                     start = 0
                     while start + 96 < 1366:

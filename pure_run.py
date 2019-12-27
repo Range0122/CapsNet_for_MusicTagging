@@ -25,11 +25,7 @@ def main(args):
     path = C.PATH
     # model = PureCapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
     model = TestMixCapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
-    # model = MixCapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
-    # model = Basic_CNN(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS) 
-    # model = CapsExtractNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
-    # model = Basic_CNN(input_shape=C.INPUT_SHAPE, output_class=C.OUTPUT_CLASS)
-    # model = SmallCapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
+    # model = MultiScaleCapsNet(input_shape=C.INPUT_SHAPE, n_class=C.OUTPUT_CLASS, routings=C.ROUTINGS)
     model.summary()
     # exit()
 
@@ -65,11 +61,14 @@ def main(args):
         # callbacks=[checkpoint])
         model.save(f'check_point/{model.name}_final.h5')
     else:
-        model.load_weights(f'check_point/{model.name}_best.h5')
+        # model.load_weights(f'check_point/{model.name}_best.h5')
+        model.load_weights(f'check_point/{model.name}_0.904204.h5')
 
         print("Loading test data ...")
         x_test, y_test = load_all_data('/'.join((path, 'test')))
         y_pred = batch_prediction(model, x_test, batch_size=200)
+
+        print(len(y_test), len(y_pred), len(y_test))
         model_evaluate(y_pred, y_test)
 
         # model.load_weights(f'check_point/{model.name}_final.h5')

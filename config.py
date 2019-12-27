@@ -3,20 +3,20 @@
 # VAL_SIZE = 2000
 # TRAIN_SIZE = 280485
 # VAL_SIZE = 27270
-BATCH_SIZE = 8
+BATCH_SIZE = 16
 
 TRAIN_SIZE = 18706
 VAL_SIZE = 1825
 
 # TRAIN
 LR = 0.001
-# INPUT_SHAPE = (96, 1366, 1)
-INPUT_SHAPE = (128, 2506, 1)
+INPUT_SHAPE = (96, 1366, 1)
+# INPUT_SHAPE = (128, 2506, 1)
 OUTPUT_CLASS = 50
 
 # for changing the input shape
 LENGTH = 4
-PATH = '/home/range/Data/MusicFeature/MTAT/log_spectrogram2'
+PATH = '/home/range/Data/MusicFeature/MTAT/log_spectrogram1'
 
 # "The coefficient for the loss of decoder"
 # 0.0005 * 96 *1366 = 655.68
