@@ -333,11 +333,11 @@ def progress(percent, width=50):
 
 
 def test(audio_path):
-    SR = 22050
-    N_FFT = 2048
-    N_MELS = 128
+    SR = 12000
+    N_FFT = 512
+    N_MELS = 96
     HOP_LEN = 256
-    DURA = 29.09
+    DURA = 29.12
 
     src, sr = librosa.load(audio_path, sr=SR)  # whole signal
     n_sample = src.shape[0]
@@ -360,6 +360,6 @@ if __name__ == '__main__':
     # generate_feature_for_MTAT(train, 'train')
     # generate_feature_for_MTAT(val, 'val')
     # generate_feature_for_MTAT(test, 'test')
-    test_path = '/home/range/Data/MTAT/raw/mp3/0/williamson-a_few_things_to_hear_before_we_all_blow_up-10-a-0-29.mp3'
+    test_path = '/Users/range/Code/Data/example/0.mp3'
     test_spectrogram = test(test_path)
     print(test_spectrogram.shape)
