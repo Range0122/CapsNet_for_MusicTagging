@@ -85,6 +85,7 @@ def generate_feature_for_MTAT(dataset, set_type):
     for i in range(len(dataset[0])):
         try:
             path = ''.join((audio_root, dataset[0][i]))
+            # TODO: CHANGE FEATURE GENERATOR HERE.
             feature = compute_melgram(path)
 
             file = dataset[0][i][2:-4]
