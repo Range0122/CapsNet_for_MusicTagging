@@ -47,7 +47,7 @@ def create_dataset_for_MTAT():
             'indian', 'female', 'synth', 'vocal', 'violin', 'beat', 'ambient',
             'piano', 'fast', 'rock', 'electronic', 'drums', 'strings', 'techno',
             'slow', 'classical', 'guitar']
-    df = pd.read_csv('/home/range/Data/MTAT/raw/annotations_final.csv', delimiter='\t')
+    df = pd.read_csv('/home/range/Data/MTAT/annotations_final.csv', delimiter='\t')
     # mp3_paths = df['mp3_path'].values
     labels = df[tags].values
 
@@ -80,11 +80,12 @@ def generate_feature_for_MTAT(dataset, set_type):
     eg. (train_paths, train_labels)
     set_type is for train/val/test
     """
-    audio_root = '/home/range/Data/MTAT/raw/mp3/'
-    npy_root = '/home/range/Data/MusicFeature/MTAT/log_spectrogram2'
+    audio_root = '/home/range/Data/MTAT/raw/'
+    npy_root = '/home/range/Data/MTAT/feature/standard'
     for i in range(len(dataset[0])):
         try:
             path = ''.join((audio_root, dataset[0][i]))
+
             # TODO: CHANGE FEATURE GENERATOR HERE.
             feature = compute_melgram(path)
 
@@ -111,11 +112,11 @@ def progress(percent, width=50):
 
 
 if __name__ == '__main__':
-    test_path = '/Users/range/Code/Data/mp3/2/zephyrus-angelus-10-ave_maria___benedicta_to_ockeghem-59-88.mp3'
-    feature = compute_melgram(test_path)
-    print(feature.shape)
+    # test_path = '/home/range/Data/MTAT/raw/2/zephyrus-angelus-10-ave_maria___benedicta_to_ockeghem-59-88.mp3'
+    # feature = compute_melgram(test_path)
+    # print(feature.shape)
 
-    # train, val, test = create_dataset_for_MTAT()
-    # generate_feature_for_MTAT(train, 'train')
-    # generate_feature_for_MTAT(val, 'val')
-    # generate_feature_for_MTAT(test, 'test')
+    train, val, test = create_dataset_for_MTAT()
+    generate_feature_for_MTAT(train, 'train')
+    generate_feature_for_MTAT(val, 'val')
+    generate_feature_for_MTAT(test, 'test')
