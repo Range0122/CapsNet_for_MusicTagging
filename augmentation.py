@@ -40,11 +40,11 @@ def draw_signal(audio_path):
 
 def draw_melspectrogram(audio_path):
     # data augmentation or not
-    # y, sr = librosa.load(audio_path, sr=None)
+    y, sr = librosa.load(audio_path, sr=None)
     # y, sr = dropout(audio_path, None, 0.05)
     # y, sr = gaussian_noise(audio_path, None, 0.05, 0)
-    # y, sr = pitch_shifting(audio_path, sr=None, n_steps=4)
-    y, sr = time_stretching(audio_path, sr=None, rate=2)
+    y, sr = pitch_shifting(audio_path, sr=None, n_steps=6, bins_per_octave=12)
+    # y, sr = time_stretching(audio_path, sr=None, rate=2)
 
     D = np.abs(librosa.stft(y)) ** 2
     S = librosa.feature.melspectrogram(S=D, sr=sr)
@@ -106,6 +106,7 @@ def loudness(S_dB, db=10):
 
 if __name__ == "__main__":
     path = '/Users/range/Code/Data/example/1.mp3'
-    melspectrogram = compute_melspectrogram(audio_path=path, sr=22050, mels=64)
+    melspectrogram = compute_melspectrogram(audio_path=path, sr=22050, mels=96)
+    print(melspectrogram.shape)
     # draw_signal(audio_path=path)
-    draw_melspectrogram(audio_path=path)
+    # draw_melspectrogram(audio_path=path)

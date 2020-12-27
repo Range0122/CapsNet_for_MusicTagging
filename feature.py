@@ -6,19 +6,19 @@ import pandas as pd
 
 
 def compute_melgram(audio_path):
-    SR = 22050
-    N_FFT = 2048
-    N_MELS = 128
+    SR = 12000
+    N_FFT = 512
+    N_MELS = 96
     HOP_LEN = 256
-    DURA = 29.09
+    DURA = 29.12
 
-    src, sr = librosa.load(audio_path, sr=SR)  # whole signal
+    src, sr = librosa.load(audio_path, sr=SR)
     n_sample = src.shape[0]
     n_sample_fit = int(DURA * SR)
 
-    if n_sample < n_sample_fit:  # if too short
+    if n_sample < n_sample_fit:
         src = np.hstack((src, np.zeros((int(DURA * SR) - n_sample,))))
-    elif n_sample > n_sample_fit:  # if too long
+    elif n_sample > n_sample_fit:
         src = src[(n_sample - n_sample_fit) // 2:(n_sample + n_sample_fit) // 2]
     logam = librosa.amplitude_to_db
     melgram = librosa.feature.melspectrogram
@@ -111,7 +111,7 @@ def progress(percent, width=50):
 
 
 if __name__ == '__main__':
-    test_path = '/home/range/Data/MTAT/raw/mp3/2/zephyrus-angelus-10-ave_maria___benedicta_to_ockeghem-59-88.mp3'
+    test_path = '/Users/range/Code/Data/mp3/2/zephyrus-angelus-10-ave_maria___benedicta_to_ockeghem-59-88.mp3'
     feature = compute_melgram(test_path)
     print(feature.shape)
 

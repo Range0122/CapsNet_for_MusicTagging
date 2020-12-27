@@ -533,7 +533,7 @@ if __name__ == "__main__":
     # model = PureCapsNet(input_shape, n_class, routings)
     # model = MixCapsNet(input_shape, n_class, routings)
     # model = CapsExtractNet(input_shape, n_class, routings)
-    # model = TestModel(input_shape, n_class)
+    model = TestMixCapsNet(input_shape, n_class, routings)
 
     # ResNet + CapsNet
     # model = ResCapsNet(input_shape, n_class, routings)
